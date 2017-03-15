@@ -32,9 +32,15 @@ server.on('uncaughtException', function (req, res, x, err) {
 });
 
 server.post('/slack/recieve', (req, res, next) => {
+
+
     var request = querystring.parse(req.body);
 
     console.log(request);
+
+    if (process.env.SLACK_VERIFICATION_TOKEN && process.env.SLACK_VERIFICATION_TOKEN != request.token) {
+        return next(new restify.errors.ForbiddenError());
+    }
 
     req.headers.accept = 'application/json';  // screw you client!
 
@@ -73,15 +79,19 @@ server.post('/slack/message', (req, res, next) => {
     request = JSON.parse(request.payload);
 
     console.log(request)
+    
     req.headers.accept = 'application/json';  // screw you client!
 
 
+    if (process.env.SLACK_VERIFICATION_TOKEN && process.env.SLACK_VERIFICATION_TOKEN != request.token) {
+        return next(new restify.errors.ForbiddenError());
+    }
 
     if (request.actions[0].name === 'status' && request.actions[0].value === 'started')
-        sendStartedResponse(request, req, res, next)
+        return sendStartedResponse(request, req, res, next)
 
     if (request.actions[0].name === 'status' && request.actions[0].value === 'done')
-        sendDoneResponse(request, req, res, next)
+        return sendDoneResponse(request, req, res, next)
 
     throw Error("I just don't know what to do")
 })
