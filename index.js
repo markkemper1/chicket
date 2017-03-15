@@ -26,6 +26,10 @@ server.listen(process.env.PORT || 8080, function () {
 });
 
 
+server.on('uncaughtException', function (req, res, x, err) {
+
+    console.log(err.stack);
+});
 
 server.post('/slack/recieve', (req, res, next) => {
     var request = querystring.parse(req.body);
@@ -35,16 +39,17 @@ server.post('/slack/recieve', (req, res, next) => {
     req.headers.accept = 'application/json';  // screw you client!
 
     const ticket = `<@${request.user_id}|${request.user_name}>: ${request.text}`
+
     res.send(
         {
             "attachments": [
                 {
-                    "title": ticket,
-                    "text": "Who's got this? :raised_hand: ",
-                    "fallback": "Sorry, you can't grab this one",
+                    "title": ticket + ':raised_hand:',
+                    "text": "_Who's got this?_",
                     "callback_id": ticket,
                     "color": "#ff0000",
                     "attachment_type": "default",
+                    "mrkdwn_in": ["text"],
                     "actions": [
                         {
                             "name": "status",
@@ -85,15 +90,13 @@ function sendStartedResponse(request, req, res, next) {
 
     const ticket = request.callback_id;
 
-    var text = `<@${request.user.id}|${request.user.name}> has started the :clock1:`
-
     res.send(
         {
             "attachments": [
                 {
-                    "title": ticket,
-                    "text": text,
-                    "fallback": text,
+                    "title": ticket + ' :clock1:',
+                    "text": `_${request.user.name}'s got it_`,
+                    "mrkdwn_in": ["text"],
                     "callback_id": ticket,
                     "color": "#ffa500",
                     "attachment_type": "default",
@@ -123,9 +126,7 @@ function sendDoneResponse(request, req, res, next) {
             "attachments": [
                 {
                     "fallback": ticket,
-                    "title": ticket,
-                    "color": "#008000",
-                    "text": "It's  done :checkered_flag:",
+                    "title": ticket + ' :checkered_flag:',
                     "color": "#008000",
                     "attachment_type": "default",
                 }
